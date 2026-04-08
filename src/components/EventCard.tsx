@@ -15,10 +15,13 @@ export default function EventCard({ event }: { event: Event }) {
     <Link to={`/events/${event.id}`} className="group block">
       <div className="overflow-hidden rounded-lg border bg-card transition-all hover:shadow-lg hover:-translate-y-1">
         {/* Cover */}
-        <div className="aspect-[16/9] bg-navy-700 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-navy-800 to-navy-600 flex items-center justify-center">
-            <span className="text-3xl font-bold text-primary-foreground/20">{event.industry}</span>
-          </div>
+        <div className="aspect-[16/9] relative overflow-hidden">
+          <img
+            src={event.coverImage}
+            alt={event.name}
+            className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
+            loading="lazy"
+          />
           {!event.isFree && (
             <Badge className="absolute top-3 right-3 bg-primary text-primary-foreground">${event.price}</Badge>
           )}

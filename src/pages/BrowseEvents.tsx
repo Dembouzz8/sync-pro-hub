@@ -3,8 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import EventCard from "@/components/EventCard";
-import { mockEvents, CITIES, INDUSTRIES } from "@/lib/mockData";
-import { Search } from "lucide-react";
+import { mockEvents, INDUSTRIES } from "@/lib/mockData";
+import { Search, MapPin } from "lucide-react";
 
 export default function BrowseEvents() {
   const [searchParams] = useSearchParams();
@@ -14,7 +14,7 @@ export default function BrowseEvents() {
 
   const filtered = useMemo(() => {
     return mockEvents.filter((e) => {
-      if (city && e.city !== city) return false;
+      if (city && !e.city.toLowerCase().includes(city.toLowerCase())) return false;
       if (industry && e.industry !== industry) return false;
       if (search && !e.name.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
@@ -39,17 +39,15 @@ export default function BrowseEvents() {
             className="pl-9"
           />
         </div>
-        <Select value={city} onValueChange={(v) => setCity(v === "all" ? "" : v)}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="All cities" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All cities</SelectItem>
-            {CITIES.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="relative w-full sm:w-48">
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Filter by city..."
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className="pl-9"
+          />
+        </div>
         <Select value={industry} onValueChange={(v) => setIndustry(v === "all" ? "" : v)}>
           <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="All industries" />

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, ArrowRight, Sparkles } from "lucide-react";
+import { Search, ArrowRight, Sparkles, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,16 +35,15 @@ export default function Index() {
 
             {/* Search bar */}
             <div className="flex flex-col sm:flex-row gap-3 bg-background/10 backdrop-blur-sm rounded-lg p-3 mt-8">
-              <Select value={city} onValueChange={setCity}>
-                <SelectTrigger className="bg-background border-0 flex-1">
-                  <SelectValue placeholder="Select city" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CITIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative flex-1">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Enter city..."
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="pl-9 bg-background border-0"
+                />
+              </div>
 
               <Select value={industry} onValueChange={setIndustry}>
                 <SelectTrigger className="bg-background border-0 flex-1">
