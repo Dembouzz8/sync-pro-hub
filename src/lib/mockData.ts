@@ -35,6 +35,7 @@ export const mockEvents: Event[] = [
     capacity: 150,
     attendees: 112,
     coverImage: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600&h=340&fit=crop",
+    isFree: false,
     price: 15,
     tags: ["AI", "Networking", "Tech"],
   },
