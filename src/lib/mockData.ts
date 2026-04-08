@@ -12,6 +12,7 @@ export interface Event {
   capacity: number;
   attendees: number;
   coverImage: string;
+  coverImageUrl: string;
   isFree: boolean;
   price?: number;
   tags: string[];
