@@ -1,19 +1,40 @@
 import { useParams, Link } from "react-router-dom";
-import { Calendar, MapPin, Users, ArrowLeft, User } from "lucide-react";
+import { Calendar, MapPin, Users, ArrowLeft, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { mockEvents } from "@/lib/mockData";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/authContext";
 import { supabase } from "@/lib/supabase";
+import type { DbEvent } from "@/lib/types";
 
 export default function EventDetail() {
   const { id } = useParams();
-  const event = mockEvents.find((e) => e.id === id);
+  const [event, setEvent] = useState<DbEvent | null>(null);
+  const [loading, setLoading] = useState(true);
   const [rsvpd, setRsvpd] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { user } = useAuth();
+
+  useEffect(() => {
+    supabase
+      .from("events")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setEvent(data as DbEvent | null);
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!event) {
     return (
@@ -24,13 +45,13 @@ export default function EventDetail() {
     );
   }
 
+  const isFree = !event.price || event.price === 0;
   const dateFormatted = new Date(event.date).toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
     year: "numeric",
   });
-  const spotsLeft = event.capacity - event.attendees;
 
   const handleRsvp = async () => {
     if (!user) {
@@ -39,7 +60,6 @@ export default function EventDetail() {
     }
     setSubmitting(true);
     try {
-      // Insert RSVP row
       const { error: rsvpError } = await supabase.from("rsvps").insert({
         event_id: id,
         user_id: user.id,
@@ -47,12 +67,12 @@ export default function EventDetail() {
       });
       if (rsvpError) throw rsvpError;
 
-      // Decrement spots_remaining
       const { error: updateError } = await supabase.rpc("decrement_spots", {
         p_event_id: id,
       });
       if (updateError) throw updateError;
 
+      setEvent({ ...event, spots_remaining: event.spots_remaining - 1 });
       setRsvpd(true);
       toast.success("You're in! See you there 🎉");
     } catch (err: any) {
@@ -65,10 +85,14 @@ export default function EventDetail() {
   return (
     <div className="flex flex-col">
       {/* Cover */}
-      <div className="aspect-[21/9] md:aspect-[3/1] relative overflow-hidden" style={{ background: "var(--hero-gradient)" }}>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-6xl font-bold text-primary-foreground/10">{event.industry}</span>
-        </div>
+      <div className="aspect-[21/9] md:aspect-[3/1] relative overflow-hidden">
+        {event.image_url ? (
+          <img src={event.image_url} alt={event.title} className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: "var(--hero-gradient)" }}>
+            <span className="text-6xl font-bold text-primary-foreground/10">{event.industry}</span>
+          </div>
+        )}
       </div>
 
       <div className="container py-8 lg:py-12">
@@ -80,12 +104,8 @@ export default function EventDetail() {
           {/* Main content */}
           <div className="lg:col-span-2 space-y-8">
             <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {event.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">{tag}</Badge>
-                ))}
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold">{event.name}</h1>
+              <Badge variant="secondary">{event.industry}</Badge>
+              <h1 className="text-3xl md:text-4xl font-bold">{event.title}</h1>
               <p className="text-muted-foreground">Hosted by <span className="font-medium text-foreground">{event.organizer}</span></p>
             </div>
 
@@ -118,23 +138,23 @@ export default function EventDetail() {
                 <div className="flex items-start gap-3">
                   <Users className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
-                    <p className="font-medium">{event.attendees} attending</p>
-                    <p className="text-sm text-muted-foreground">{spotsLeft} spots remaining</p>
+                    <p className="font-medium">{event.capacity - event.spots_remaining} attending</p>
+                    <p className="text-sm text-muted-foreground">{event.spots_remaining} spots remaining</p>
                   </div>
                 </div>
               </div>
 
               <div className="border-t pt-4">
                 <p className="text-2xl font-bold mb-4">
-                  {event.isFree ? "Free" : `$${event.price}`}
+                  {isFree ? "Free" : `$${event.price}`}
                 </p>
                 <Button
                   className="w-full"
                   size="lg"
                   onClick={handleRsvp}
-                  disabled={rsvpd || spotsLeft <= 0 || submitting}
+                  disabled={rsvpd || event.spots_remaining <= 0 || submitting}
                 >
-                  {rsvpd ? "You're going!" : submitting ? "Saving…" : spotsLeft <= 0 ? "Sold out" : "RSVP Now"}
+                  {rsvpd ? "You're going!" : submitting ? "Saving…" : event.spots_remaining <= 0 ? "Sold out" : "RSVP Now"}
                 </Button>
               </div>
             </div>
