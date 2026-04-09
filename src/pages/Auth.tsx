@@ -16,17 +16,25 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<"attendee" | "organizer">("attendee");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSignup) {
-      signup(email, password, name, role);
-      toast.success("Account created!");
-    } else {
-      login(email, password, role);
-      toast.success("Welcome back!");
+    setSubmitting(true);
+    try {
+      if (isSignup) {
+        await signup(email, password, name, role);
+        toast.success("Account created! Check your email to confirm.");
+      } else {
+        await login(email, password);
+        toast.success("Welcome back!");
+      }
+      navigate(role === "organizer" ? "/dashboard" : "/events");
+    } catch (err: any) {
+      toast.error(err.message ?? "Something went wrong");
+    } finally {
+      setSubmitting(false);
     }
-    navigate(role === "organizer" ? "/dashboard" : "/events");
   };
 
   return (
@@ -86,8 +94,8 @@ export default function Auth() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full" size="lg">
-            {isSignup ? "Create account" : "Sign in"}
+          <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+            {submitting ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
           </Button>
         </form>
 

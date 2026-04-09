@@ -1,15 +1,19 @@
 import { useParams, Link } from "react-router-dom";
-import { Calendar, MapPin, Users, Clock, ArrowLeft, User } from "lucide-react";
+import { Calendar, MapPin, Users, ArrowLeft, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { mockEvents } from "@/lib/mockData";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/authContext";
+import { supabase } from "@/lib/supabase";
 
 export default function EventDetail() {
   const { id } = useParams();
   const event = mockEvents.find((e) => e.id === id);
   const [rsvpd, setRsvpd] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const { user } = useAuth();
 
   if (!event) {
     return (
@@ -28,9 +32,34 @@ export default function EventDetail() {
   });
   const spotsLeft = event.capacity - event.attendees;
 
-  const handleRsvp = () => {
-    setRsvpd(true);
-    toast.success("You're in! See you there 🎉");
+  const handleRsvp = async () => {
+    if (!user) {
+      toast.error("Please sign in to RSVP");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      // Insert RSVP row
+      const { error: rsvpError } = await supabase.from("rsvps").insert({
+        event_id: id,
+        user_id: user.id,
+        status: "confirmed",
+      });
+      if (rsvpError) throw rsvpError;
+
+      // Decrement spots_remaining
+      const { error: updateError } = await supabase.rpc("decrement_spots", {
+        p_event_id: id,
+      });
+      if (updateError) throw updateError;
+
+      setRsvpd(true);
+      toast.success("You're in! See you there 🎉");
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not RSVP");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -103,9 +132,9 @@ export default function EventDetail() {
                   className="w-full"
                   size="lg"
                   onClick={handleRsvp}
-                  disabled={rsvpd || spotsLeft <= 0}
+                  disabled={rsvpd || spotsLeft <= 0 || submitting}
                 >
-                  {rsvpd ? "You're going!" : spotsLeft <= 0 ? "Sold out" : "RSVP Now"}
+                  {rsvpd ? "You're going!" : submitting ? "Saving…" : spotsLeft <= 0 ? "Sold out" : "RSVP Now"}
                 </Button>
               </div>
             </div>
