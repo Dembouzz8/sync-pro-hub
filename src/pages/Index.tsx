@@ -1,17 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, ArrowRight, Sparkles, MapPin } from "lucide-react";
+import { Search, ArrowRight, Sparkles, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import EventCard from "@/components/EventCard";
-import { mockEvents, CITIES, INDUSTRIES } from "@/lib/mockData";
+import { INDUSTRIES } from "@/lib/mockData";
+import { supabase } from "@/lib/supabase";
+import type { DbEvent } from "@/lib/types";
 
 export default function Index() {
   const navigate = useNavigate();
   const [city, setCity] = useState("");
   const [industry, setIndustry] = useState("");
-  const featured = mockEvents.slice(0, 3);
+  const [featured, setFeatured] = useState<DbEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from("events")
+      .select("*")
+      .order("date", { ascending: true })
+      .limit(3)
+      .then(({ data }) => {
+        setFeatured((data as DbEvent[]) || []);
+        setLoading(false);
+      });
+  }, []);
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -62,7 +77,6 @@ export default function Index() {
             </div>
           </div>
         </div>
-        {/* Decorative */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-navy-400/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       </section>
 
@@ -80,11 +94,19 @@ export default function Index() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featured.map((event) => (
-            <EventCard key={event.id} event={event} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : featured.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featured.map((event) => (
+              <EventCard key={event.id} event={event} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-center py-12 text-muted-foreground">No events yet. Check back soon!</p>
+        )}
       </section>
 
       {/* Host CTA */}
