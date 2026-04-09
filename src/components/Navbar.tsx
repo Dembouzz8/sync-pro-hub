@@ -5,7 +5,7 @@ import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -25,10 +25,10 @@ export default function Navbar() {
               Dashboard
             </Link>
           )}
-          {user ? (
+          {loading ? null : user ? (
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground">{user.name}</span>
-              <Button variant="outline" size="sm" onClick={logout}>Log out</Button>
+              <Button variant="outline" size="sm" onClick={() => logout()}>Log out</Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
