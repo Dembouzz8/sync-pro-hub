@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "@/lib/authContext";
+import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,20 +10,52 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { INDUSTRIES } from "@/lib/mockData";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export default function CreateEvent() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [isFree, setIsFree] = useState(true);
+  const [industry, setIndustry] = useState("");
+  const [saving, setSaving] = useState(false);
 
   if (!user || user.role !== "organizer") {
     return <Navigate to="/login" replace />;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setSaving(true);
+
+    const form = e.currentTarget;
+    const capacity = parseInt((form.elements.namedItem("capacity") as HTMLInputElement).value, 10);
+
+    const eventData = {
+      title: (form.elements.namedItem("name") as HTMLInputElement).value,
+      description: (form.elements.namedItem("description") as HTMLTextAreaElement).value,
+      image_url: (form.elements.namedItem("cover") as HTMLInputElement).value || null,
+      date: (form.elements.namedItem("date") as HTMLInputElement).value,
+      time: (form.elements.namedItem("time") as HTMLInputElement).value,
+      city: (form.elements.namedItem("city") as HTMLInputElement).value,
+      location: (form.elements.namedItem("location") as HTMLInputElement).value,
+      industry,
+      capacity,
+      spots_remaining: capacity,
+      price: isFree ? 0 : parseFloat((form.elements.namedItem("price") as HTMLInputElement).value),
+      organizer: user.id,
+    };
+
+    const { data, error } = await supabase.from("events").insert(eventData).select("id").single();
+
+    setSaving(false);
+
+    if (error) {
+      toast.error(error.message || "Failed to create event. Please try again.");
+      return;
+    }
+
     toast.success("Event created successfully!");
-    navigate("/dashboard");
+    navigate(`/events/${data.id}`);
   };
 
   return (
@@ -73,7 +106,7 @@ export default function CreateEvent() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Industry / Category</Label>
-            <Select required>
+            <Select required value={industry} onValueChange={setIndustry}>
               <SelectTrigger><SelectValue placeholder="Select industry" /></SelectTrigger>
               <SelectContent>
                 {INDUSTRIES.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
@@ -101,8 +134,8 @@ export default function CreateEvent() {
           </div>
         )}
 
-        <Button type="submit" size="lg" className="w-full">
-          Create Event
+        <Button type="submit" size="lg" className="w-full" disabled={saving}>
+          {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating…</> : "Create Event"}
         </Button>
       </form>
     </div>
