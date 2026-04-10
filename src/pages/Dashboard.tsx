@@ -8,7 +8,7 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   if (!user || user.role !== "organizer") {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   const myEvents = mockEvents.slice(0, 3); // mock

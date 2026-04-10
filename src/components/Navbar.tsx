@@ -32,8 +32,8 @@ export default function Navbar() {
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Link to="/auth"><Button variant="outline" size="sm">Log in</Button></Link>
-              <Link to="/auth?mode=signup"><Button size="sm">Sign up</Button></Link>
+              <Link to="/login"><Button variant="outline" size="sm">Log in</Button></Link>
+              <Link to="/signup"><Button size="sm">Sign up</Button></Link>
             </div>
           )}
         </div>
@@ -55,8 +55,8 @@ export default function Navbar() {
             <Button variant="outline" size="sm" className="w-full" onClick={() => { logout(); setMobileOpen(false); }}>Log out</Button>
           ) : (
             <div className="space-y-2">
-              <Link to="/auth" onClick={() => setMobileOpen(false)}><Button variant="outline" size="sm" className="w-full">Log in</Button></Link>
-              <Link to="/auth?mode=signup" onClick={() => setMobileOpen(false)}><Button size="sm" className="w-full">Sign up</Button></Link>
+              <Link to="/login" onClick={() => setMobileOpen(false)}><Button variant="outline" size="sm" className="w-full">Log in</Button></Link>
+              <Link to="/signup" onClick={() => setMobileOpen(false)}><Button size="sm" className="w-full">Sign up</Button></Link>
             </div>
           )}
         </div>

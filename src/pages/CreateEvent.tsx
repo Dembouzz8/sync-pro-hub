@@ -16,7 +16,7 @@ export default function CreateEvent() {
   const [isFree, setIsFree] = useState(true);
 
   if (!user || user.role !== "organizer") {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   const handleSubmit = (e: React.FormEvent) => {
