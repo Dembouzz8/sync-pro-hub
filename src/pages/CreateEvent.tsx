@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { CITIES, INDUSTRIES } from "@/lib/mockData";
+import { INDUSTRIES } from "@/lib/mockData";
 import { toast } from "sonner";
 
 export default function CreateEvent() {
@@ -61,13 +61,8 @@ export default function CreateEvent() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label>City</Label>
-            <Select required>
-              <SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger>
-              <SelectContent>
-                {CITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="city">City</Label>
+            <Input id="city" placeholder="e.g. San Francisco" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="location">Venue</Label>

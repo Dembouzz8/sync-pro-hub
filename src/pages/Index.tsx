@@ -120,7 +120,7 @@ export default function Index() {
             <p className="text-muted-foreground">
               Create and manage professional meetups effortlessly. Reach thousands of professionals in your city.
             </p>
-            <Link to="/auth?mode=signup">
+            <Link to="/signup?role=organizer">
               <Button size="lg" className="gap-2 mt-2">
                 Get started <ArrowRight className="h-4 w-4" />
               </Button>
