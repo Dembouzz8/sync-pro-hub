@@ -12,10 +12,12 @@ export default function Auth() {
   const { login, signup } = useAuth();
 
   const isSignup = location.pathname === "/signup";
+  const searchParams = new URLSearchParams(location.search);
+  const preselectedRole = searchParams.get("role");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<"attendee" | "organizer">("attendee");
+  const [role, setRole] = useState<"attendee" | "organizer">(preselectedRole === "organizer" ? "organizer" : "attendee");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
