@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,11 +7,11 @@ import { useAuth } from "@/lib/authContext";
 import { toast } from "sonner";
 
 export default function Auth() {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { login, signup } = useAuth();
 
-  const [isSignup, setIsSignup] = useState(searchParams.get("mode") === "signup");
+  const isSignup = location.pathname === "/signup";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -65,34 +65,35 @@ export default function Auth() {
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
           </div>
 
-          {/* Role selector */}
-          <div className="space-y-2">
-            <Label>I want to</Label>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setRole("attendee")}
-                className={`rounded-lg border p-3 text-center text-sm font-medium transition-all ${
-                  role === "attendee"
-                    ? "border-primary bg-primary/5 text-primary"
-                    : "border-border text-muted-foreground hover:border-primary/50"
-                }`}
-              >
-                Attend events
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole("organizer")}
-                className={`rounded-lg border p-3 text-center text-sm font-medium transition-all ${
-                  role === "organizer"
-                    ? "border-primary bg-primary/5 text-primary"
-                    : "border-border text-muted-foreground hover:border-primary/50"
-                }`}
-              >
-                Host events
-              </button>
+          {isSignup && (
+            <div className="space-y-2">
+              <Label>I want to</Label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRole("attendee")}
+                  className={`rounded-lg border p-3 text-center text-sm font-medium transition-all ${
+                    role === "attendee"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  Attend events
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole("organizer")}
+                  className={`rounded-lg border p-3 text-center text-sm font-medium transition-all ${
+                    role === "organizer"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border text-muted-foreground hover:border-primary/50"
+                  }`}
+                >
+                  Host events
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <Button type="submit" className="w-full" size="lg" disabled={submitting}>
             {submitting ? "Please wait…" : isSignup ? "Create account" : "Sign in"}
@@ -101,9 +102,9 @@ export default function Auth() {
 
         <p className="text-center text-sm text-muted-foreground">
           {isSignup ? "Already have an account?" : "Don't have an account?"}{" "}
-          <button onClick={() => setIsSignup(!isSignup)} className="font-medium text-primary hover:underline">
+          <Link to={isSignup ? "/login" : "/signup"} className="font-medium text-primary hover:underline">
             {isSignup ? "Sign in" : "Sign up"}
-          </button>
+          </Link>
         </p>
       </div>
     </div>
