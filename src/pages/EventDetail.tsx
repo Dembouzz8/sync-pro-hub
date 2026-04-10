@@ -75,6 +75,26 @@ export default function EventDetail() {
       setEvent({ ...event, spots_remaining: event.spots_remaining - 1 });
       setRsvpd(true);
       toast.success("You're in! See you there 🎉");
+
+      // Notify external webhook
+      try {
+        await fetch("https://sha111.app.n8n.cloud/webhook/syncup-pro", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_name: user.name,
+            user_email: user.email,
+            event_title: event.title,
+            event_date: event.date,
+            event_time: event.time,
+            event_location: event.location,
+            event_city: event.city,
+            event_price: event.price ?? 0,
+          }),
+        });
+      } catch {
+        // Webhook failure is non-blocking
+      }
     } catch (err: any) {
       toast.error(err.message ?? "Could not RSVP");
     } finally {
