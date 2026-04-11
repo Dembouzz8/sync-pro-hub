@@ -121,7 +121,7 @@ export default function CreateEvent() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Industry / Category</Label>
-            <Select required value={industry} onValueChange={setIndustry}>
+            <Select value={industry} onValueChange={setIndustry}>
               <SelectTrigger><SelectValue placeholder="Select industry" /></SelectTrigger>
               <SelectContent>
                 {INDUSTRIES.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}
