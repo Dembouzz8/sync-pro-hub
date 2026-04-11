@@ -36,6 +36,10 @@ export default function CreateEvent() {
     const form = e.currentTarget;
     const capacity = parseInt((form.elements.namedItem("capacity") as HTMLInputElement).value, 10);
 
+    // Get organizer email from current Supabase auth session
+    const { data: { session } } = await supabase.auth.getSession();
+    const organizerEmail = session?.user?.email ?? user?.email ?? "";
+
     const eventData = {
       title: (form.elements.namedItem("name") as HTMLInputElement).value,
       description: (form.elements.namedItem("description") as HTMLTextAreaElement).value,
@@ -48,6 +52,7 @@ export default function CreateEvent() {
       capacity,
       spots_remaining: capacity,
       price: isFree ? 0 : parseFloat((form.elements.namedItem("price") as HTMLInputElement).value),
+      organizer_email: organizerEmail,
     };
 
     console.log("Inserting event:", eventData);
