@@ -26,6 +26,17 @@ export default function CreateEvent() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    const form = e.currentTarget;
+    const getFieldValue = (fieldName: string) => {
+      const field = form.elements.namedItem(fieldName);
+
+      if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
+        return field.value.trim();
+      }
+
+      return "";
+    };
+
     if (!industry) {
       toast.error("Please select an industry / category.");
       return;
@@ -33,45 +44,58 @@ export default function CreateEvent() {
 
     setSaving(true);
 
-    const form = e.currentTarget;
-    const capacity = parseInt((form.elements.namedItem("capacity") as HTMLInputElement).value, 10);
-
-    // Get organizer email from current Supabase auth session
-    const { data: { session } } = await supabase.auth.getSession();
-    const organizerEmail = session?.user?.email ?? user?.email ?? "";
-
-    const eventData = {
-      title: (form.elements.namedItem("name") as HTMLInputElement).value,
-      description: (form.elements.namedItem("description") as HTMLTextAreaElement).value,
-      image_url: (form.elements.namedItem("cover") as HTMLInputElement).value || null,
-      date: (form.elements.namedItem("date") as HTMLInputElement).value,
-      time: (form.elements.namedItem("time") as HTMLInputElement).value,
-      city: (form.elements.namedItem("city") as HTMLInputElement).value,
-      location: (form.elements.namedItem("location") as HTMLInputElement).value,
-      industry,
-      capacity,
-      spots_remaining: capacity,
-      price: isFree ? 0 : parseFloat((form.elements.namedItem("price") as HTMLInputElement).value),
-      organizer_email: organizerEmail,
-    };
-
-    console.log("Inserting event:", eventData);
-
     try {
+      const capacity = Number(getFieldValue("capacity"));
+
+      if (!Number.isFinite(capacity) || capacity < 1) {
+        throw new Error("Please enter a valid capacity.");
+      }
+
+      const price = isFree ? 0 : Number(getFieldValue("price"));
+
+      if (!isFree && (!Number.isFinite(price) || price < 0)) {
+        throw new Error("Please enter a valid ticket price.");
+      }
+
+      const { data, error: userError } = await supabase.auth.getUser();
+
+      if (userError) {
+        throw userError;
+      }
+
+      const organizerEmail = data.user?.email;
+
+      if (!organizerEmail) {
+        throw new Error("Could not get the organizer email. Please log in again.");
+      }
+
+      const eventData = {
+        title: getFieldValue("name"),
+        description: getFieldValue("description"),
+        date: getFieldValue("date"),
+        time: getFieldValue("time"),
+        location: getFieldValue("location"),
+        city: getFieldValue("city"),
+        industry,
+        capacity,
+        spots_remaining: capacity,
+        price,
+        image_url: getFieldValue("cover") || null,
+        organizer_email: organizerEmail,
+      };
+
       const { error } = await supabase.from("events").insert(eventData);
 
       if (error) {
-        console.error("Supabase insert error:", error);
-        toast.error(error.message || "Failed to create event.");
-        setSaving(false);
-        return;
+        throw error;
       }
 
       toast.success("Event created successfully!");
       navigate("/events");
-    } catch (err: any) {
-      console.error("Unexpected error:", err);
-      toast.error(err?.message || "An unexpected error occurred.");
+    } catch (error) {
+      console.error("Create event failed:", error);
+      const message = error instanceof Error ? error.message : "Failed to create event.";
+      toast.error(message);
     } finally {
       setSaving(false);
     }
