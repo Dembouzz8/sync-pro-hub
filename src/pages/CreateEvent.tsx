@@ -25,37 +25,52 @@ export default function CreateEvent() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSaving(true);
 
-    const form = e.currentTarget;
-    const capacity = parseInt((form.elements.namedItem("capacity") as HTMLInputElement).value, 10);
-
-    const eventData = {
-      title: (form.elements.namedItem("name") as HTMLInputElement).value,
-      description: (form.elements.namedItem("description") as HTMLTextAreaElement).value,
-      image_url: (form.elements.namedItem("cover") as HTMLInputElement).value || null,
-      date: (form.elements.namedItem("date") as HTMLInputElement).value,
-      time: (form.elements.namedItem("time") as HTMLInputElement).value,
-      city: (form.elements.namedItem("city") as HTMLInputElement).value,
-      location: (form.elements.namedItem("location") as HTMLInputElement).value,
-      industry,
-      capacity,
-      spots_remaining: capacity,
-      price: isFree ? 0 : parseFloat((form.elements.namedItem("price") as HTMLInputElement).value),
-      organizer: user.id,
-    };
-
-    const { data, error } = await supabase.from("events").insert(eventData).select("id").single();
-
-    setSaving(false);
-
-    if (error) {
-      toast.error(error.message || "Failed to create event. Please try again.");
+    if (!industry) {
+      toast.error("Please select an industry / category.");
       return;
     }
 
-    toast.success("Event created successfully!");
-    navigate(`/events/${data.id}`);
+    setSaving(true);
+
+    try {
+      const form = e.currentTarget;
+      const capacity = parseInt((form.elements.namedItem("capacity") as HTMLInputElement).value, 10);
+
+      const eventData = {
+        title: (form.elements.namedItem("name") as HTMLInputElement).value,
+        description: (form.elements.namedItem("description") as HTMLTextAreaElement).value,
+        image_url: (form.elements.namedItem("cover") as HTMLInputElement).value || null,
+        date: (form.elements.namedItem("date") as HTMLInputElement).value,
+        time: (form.elements.namedItem("time") as HTMLInputElement).value,
+        city: (form.elements.namedItem("city") as HTMLInputElement).value,
+        location: (form.elements.namedItem("location") as HTMLInputElement).value,
+        industry,
+        capacity,
+        spots_remaining: capacity,
+        price: isFree ? 0 : parseFloat((form.elements.namedItem("price") as HTMLInputElement).value),
+        organizer: user.id,
+      };
+
+      console.log("Inserting event:", eventData);
+
+      const { data, error } = await supabase.from("events").insert(eventData).select("id").single();
+
+      if (error) {
+        console.error("Supabase insert error:", error);
+        toast.error(error.message || "Failed to create event.");
+        return;
+      }
+
+      console.log("Event created:", data);
+      toast.success("Event created successfully!");
+      navigate(`/events/${data.id}`);
+    } catch (err: any) {
+      console.error("Unexpected error:", err);
+      toast.error(err?.message || "An unexpected error occurred.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
