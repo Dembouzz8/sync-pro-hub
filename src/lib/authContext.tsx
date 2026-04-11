@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Set up listener FIRST so we catch the INITIAL_SESSION event
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         if (session?.user) {
@@ -52,13 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const profile = await fetchProfile(session.user);
-        setUser(profile);
-      }
-      setLoading(false);
-    });
+    // Kick-start the session restore (triggers onAuthStateChange with INITIAL_SESSION)
+    supabase.auth.getSession();
 
     return () => subscription.unsubscribe();
   }, []);
@@ -86,8 +82,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
     setUser(null);
+    setLoading(false);
+    supabase.auth.signOut();
   };
 
   return (
