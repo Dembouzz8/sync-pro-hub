@@ -33,38 +33,37 @@ export default function CreateEvent() {
 
     setSaving(true);
 
+    const form = e.currentTarget;
+    const capacity = parseInt((form.elements.namedItem("capacity") as HTMLInputElement).value, 10);
+
+    const eventData = {
+      title: (form.elements.namedItem("name") as HTMLInputElement).value,
+      description: (form.elements.namedItem("description") as HTMLTextAreaElement).value,
+      image_url: (form.elements.namedItem("cover") as HTMLInputElement).value || null,
+      date: (form.elements.namedItem("date") as HTMLInputElement).value,
+      time: (form.elements.namedItem("time") as HTMLInputElement).value,
+      city: (form.elements.namedItem("city") as HTMLInputElement).value,
+      location: (form.elements.namedItem("location") as HTMLInputElement).value,
+      industry,
+      capacity,
+      spots_remaining: capacity,
+      price: isFree ? 0 : parseFloat((form.elements.namedItem("price") as HTMLInputElement).value),
+    };
+
+    console.log("Inserting event:", eventData);
+
     try {
-      const form = e.currentTarget;
-      const capacity = parseInt((form.elements.namedItem("capacity") as HTMLInputElement).value, 10);
-
-      const eventData = {
-        title: (form.elements.namedItem("name") as HTMLInputElement).value,
-        description: (form.elements.namedItem("description") as HTMLTextAreaElement).value,
-        image_url: (form.elements.namedItem("cover") as HTMLInputElement).value || null,
-        date: (form.elements.namedItem("date") as HTMLInputElement).value,
-        time: (form.elements.namedItem("time") as HTMLInputElement).value,
-        city: (form.elements.namedItem("city") as HTMLInputElement).value,
-        location: (form.elements.namedItem("location") as HTMLInputElement).value,
-        industry,
-        capacity,
-        spots_remaining: capacity,
-        price: isFree ? 0 : parseFloat((form.elements.namedItem("price") as HTMLInputElement).value),
-        organizer: user.id,
-      };
-
-      console.log("Inserting event:", eventData);
-
-      const { data, error } = await supabase.from("events").insert(eventData).select("id").single();
+      const { error } = await supabase.from("events").insert(eventData);
 
       if (error) {
         console.error("Supabase insert error:", error);
         toast.error(error.message || "Failed to create event.");
+        setSaving(false);
         return;
       }
 
-      console.log("Event created:", data);
       toast.success("Event created successfully!");
-      navigate(`/events/${data.id}`);
+      navigate("/events");
     } catch (err: any) {
       console.error("Unexpected error:", err);
       toast.error(err?.message || "An unexpected error occurred.");
