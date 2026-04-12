@@ -12,4 +12,6 @@ export interface DbEvent {
   spots_remaining: number;
   price: number | null;
   image_url: string | null;
+  organizer_name: string | null;
+  organizer_email: string | null;
 }

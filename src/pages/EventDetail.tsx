@@ -126,7 +126,7 @@ export default function EventDetail() {
             <div className="space-y-4">
               <Badge variant="secondary">{event.industry}</Badge>
               <h1 className="text-3xl md:text-4xl font-bold">{event.title}</h1>
-              <p className="text-muted-foreground">Hosted by <span className="font-medium text-foreground">{event.organizer}</span></p>
+              <p className="text-muted-foreground">Hosted by <span className="font-medium text-foreground">{event.organizer_name || "Event organizer"}</span></p>
             </div>
 
             <div>
@@ -186,9 +186,9 @@ export default function EventDetail() {
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <User className="h-5 w-5 text-primary" />
                 </div>
-                <div>
-                  <p className="font-medium">{event.organizer}</p>
-                  <p className="text-xs text-muted-foreground">Event organizer</p>
+                 <div>
+                   <p className="font-medium">{event.organizer_name || "Event organizer"}</p>
+                   {event.organizer_email && <p className="text-xs text-muted-foreground">{event.organizer_email}</p>}
                 </div>
               </div>
             </div>
