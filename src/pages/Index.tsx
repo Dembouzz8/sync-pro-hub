@@ -22,7 +22,8 @@ export default function Index() {
       .select("*")
       .order("date", { ascending: true })
       .limit(3)
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) console.error("Events fetch error:", error);
         setFeatured((data as DbEvent[]) || []);
         setLoading(false);
       });
