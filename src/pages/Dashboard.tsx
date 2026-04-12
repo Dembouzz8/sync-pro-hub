@@ -16,7 +16,7 @@ export default function Dashboard() {
     supabase
       .from("events")
       .select("*")
-      .eq("organizer", user.id)
+     .eq("organizer_email", user.email)
       .order("date", { ascending: false })
       .then(({ data }) => {
         setEvents(data ?? []);
