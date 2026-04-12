@@ -130,7 +130,7 @@ console.log("Insert result:", insertData, "Error:", error);
 
         <div className="space-y-2">
           <Label htmlFor="cover">Cover image URL</Label>
-          <Input id="cover" name="cover" type="url" placeholder="https://example.com/image.jpg" />
+          <Input id="cover" name="cover" type="text" placeholder="https://example.com/image.jpg" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
