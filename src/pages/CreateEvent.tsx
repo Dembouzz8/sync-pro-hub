@@ -12,6 +12,13 @@ import { INDUSTRIES } from "@/lib/mockData";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
+function formatTime12(time24: string): string {
+  const [h, m] = time24.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 || 12;
+  return `${hour12}:${m.toString().padStart(2, "0")} ${period}`;
+}
+
 export default function CreateEvent() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -29,11 +36,9 @@ export default function CreateEvent() {
     const form = e.currentTarget;
     const getFieldValue = (fieldName: string) => {
       const field = form.elements.namedItem(fieldName);
-
       if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
         return field.value.trim();
       }
-
       return "";
     };
 
@@ -46,25 +51,26 @@ export default function CreateEvent() {
 
     try {
       const capacity = Number(getFieldValue("capacity"));
-
       if (!Number.isFinite(capacity) || capacity < 1) {
         throw new Error("Please enter a valid capacity.");
       }
 
       const price = isFree ? 0 : Number(getFieldValue("price"));
-
       if (!isFree && (!Number.isFinite(price) || price < 0)) {
         throw new Error("Please enter a valid ticket price.");
       }
 
-      const { data, error: userError } = await supabase.auth.getUser();
-
-      if (userError) {
-        throw userError;
+      const startTime = getFieldValue("startTime");
+      const endTime = getFieldValue("endTime");
+      if (!startTime || !endTime) {
+        throw new Error("Please enter both start and end times.");
       }
+      const time = `${formatTime12(startTime)} - ${formatTime12(endTime)}`;
+
+      const { data, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
 
       const organizerEmail = data.user?.email;
-
       if (!organizerEmail) {
         throw new Error("Could not get the organizer email. Please log in again.");
       }
@@ -73,7 +79,7 @@ export default function CreateEvent() {
         title: getFieldValue("name"),
         description: getFieldValue("description"),
         date: getFieldValue("date"),
-        time: getFieldValue("time"),
+        time,
         location: getFieldValue("location"),
         city: getFieldValue("city"),
         industry,
@@ -81,14 +87,12 @@ export default function CreateEvent() {
         spots_remaining: capacity,
         price,
         image_url: getFieldValue("cover") || null,
+        organizer_name: getFieldValue("organizerName"),
         organizer_email: organizerEmail,
       };
 
       const { error } = await supabase.from("events").insert(eventData);
-
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       toast.success("Event created successfully!");
       navigate("/events");
@@ -120,18 +124,27 @@ export default function CreateEvent() {
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="organizerName">Organizer Name</Label>
+          <Input id="organizerName" placeholder="e.g. Jane Smith" required />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="cover">Cover image URL</Label>
           <Input id="cover" type="url" placeholder="https://example.com/image.jpg" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="date">Date</Label>
             <Input id="date" type="date" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="time">Time</Label>
-            <Input id="time" type="time" required />
+            <Label htmlFor="startTime">Start Time</Label>
+            <Input id="startTime" type="time" required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="endTime">End Time</Label>
+            <Input id="endTime" type="time" required />
           </div>
         </div>
 
