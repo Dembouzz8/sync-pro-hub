@@ -54,7 +54,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // Kick-start the session restore (triggers onAuthStateChange with INITIAL_SESSION)
-    supabase.auth.getSession();
+    supabase.auth.getSession().then(({ error }) => {
+  if (error) {
+    supabase.auth.signOut();
+    setLoading(false);
+  }
+});
 
     return () => subscription.unsubscribe();
   }, []);
