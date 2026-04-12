@@ -34,60 +34,59 @@ export default function CreateEvent() {
     e.preventDefault();
 
     const form = e.currentTarget;
-    const getFieldValue = (fieldName: string) => {
-      const field = form.elements.namedItem(fieldName);
-      if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) {
-        return field.value.trim();
-      }
-      return "";
-    };
+
+    // Use FormData — works with name attributes reliably
+    const fd = new FormData(form);
+    const get = (key: string) => (fd.get(key) as string | null)?.trim() ?? "";
 
     if (!industry) {
       toast.error("Please select an industry / category.");
       return;
     }
 
+    const startTime = get("startTime");
+    const endTime = get("endTime");
+    if (!startTime || !endTime) {
+      toast.error("Please enter both start and end times.");
+      return;
+    }
+
+    const capacity = Number(get("capacity"));
+    if (!Number.isFinite(capacity) || capacity < 1) {
+      toast.error("Please enter a valid capacity.");
+      return;
+    }
+
+    const price = isFree ? 0 : Number(get("price"));
+    if (!isFree && (!Number.isFinite(price) || price < 0)) {
+      toast.error("Please enter a valid ticket price.");
+      return;
+    }
+
     setSaving(true);
 
     try {
-      const capacity = Number(getFieldValue("capacity"));
-      if (!Number.isFinite(capacity) || capacity < 1) {
-        throw new Error("Please enter a valid capacity.");
-      }
-
-      const price = isFree ? 0 : Number(getFieldValue("price"));
-      if (!isFree && (!Number.isFinite(price) || price < 0)) {
-        throw new Error("Please enter a valid ticket price.");
-      }
-
-      const startTime = getFieldValue("startTime");
-      const endTime = getFieldValue("endTime");
-      if (!startTime || !endTime) {
-        throw new Error("Please enter both start and end times.");
-      }
-      const time = `${formatTime12(startTime)} - ${formatTime12(endTime)}`;
-
-      const { data, error: userError } = await supabase.auth.getUser();
+      const { data: authData, error: userError } = await supabase.auth.getUser();
       if (userError) throw userError;
 
-      const organizerEmail = data.user?.email;
+      const organizerEmail = authData.user?.email;
       if (!organizerEmail) {
-        throw new Error("Could not get the organizer email. Please log in again.");
+        throw new Error("Could not get organizer email. Please log in again.");
       }
 
       const eventData = {
-        title: getFieldValue("name"),
-        description: getFieldValue("description"),
-        date: getFieldValue("date"),
-        time,
-        location: getFieldValue("location"),
-        city: getFieldValue("city"),
+        title: get("name"),
+        description: get("description"),
+        organizer_name: get("organizerName"),
+        date: get("date"),
+        time: `${formatTime12(startTime)} - ${formatTime12(endTime)}`,
+        location: get("location"),
+        city: get("city"),
         industry,
         capacity,
         spots_remaining: capacity,
         price,
-        image_url: getFieldValue("cover") || null,
-        organizer_name: getFieldValue("organizerName"),
+        image_url: get("cover") || null,
         organizer_email: organizerEmail,
       };
 
@@ -96,10 +95,9 @@ export default function CreateEvent() {
 
       toast.success("Event created successfully!");
       navigate("/events");
-    } catch (error) {
-      console.error("Create event failed:", error);
-      const message = error instanceof Error ? error.message : "Failed to create event.";
-      toast.error(message);
+    } catch (err) {
+      console.error("Create event failed:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to create event.");
     } finally {
       setSaving(false);
     }
@@ -115,47 +113,47 @@ export default function CreateEvent() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="name">Event name</Label>
-          <Input id="name" placeholder="e.g. Tech Founders Mixer" required />
+          <Input id="name" name="name" placeholder="e.g. Tech Founders Mixer" required />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
-          <Textarea id="description" rows={5} placeholder="What's this event about?" required />
+          <Textarea id="description" name="description" rows={5} placeholder="What's this event about?" required />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="organizerName">Organizer Name</Label>
-          <Input id="organizerName" placeholder="e.g. Jane Smith" required />
+          <Label htmlFor="organizerName">Organizer name</Label>
+          <Input id="organizerName" name="organizerName" placeholder="e.g. Lagos Tech Network" required />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="cover">Cover image URL</Label>
-          <Input id="cover" type="url" placeholder="https://example.com/image.jpg" />
+          <Input id="cover" name="cover" type="url" placeholder="https://example.com/image.jpg" />
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="date">Date</Label>
-            <Input id="date" type="date" required />
+            <Input id="date" name="date" type="date" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="startTime">Start Time</Label>
-            <Input id="startTime" type="time" required />
+            <Label htmlFor="startTime">Start time</Label>
+            <Input id="startTime" name="startTime" type="time" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="endTime">End Time</Label>
-            <Input id="endTime" type="time" required />
+            <Label htmlFor="endTime">End time</Label>
+            <Input id="endTime" name="endTime" type="time" required />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="city">City</Label>
-            <Input id="city" placeholder="e.g. San Francisco" required />
+            <Input id="city" name="city" placeholder="e.g. Lagos" required />
           </div>
           <div className="space-y-2">
             <Label htmlFor="location">Venue</Label>
-            <Input id="location" placeholder="123 Main St" required />
+            <Input id="location" name="location" placeholder="123 Main St" required />
           </div>
         </div>
 
@@ -171,7 +169,7 @@ export default function CreateEvent() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="capacity">Capacity</Label>
-            <Input id="capacity" type="number" min={1} placeholder="50" required />
+            <Input id="capacity" name="capacity" type="number" min={1} placeholder="50" required />
           </div>
         </div>
 
@@ -185,8 +183,8 @@ export default function CreateEvent() {
 
         {!isFree && (
           <div className="space-y-2">
-            <Label htmlFor="price">Ticket price ($)</Label>
-            <Input id="price" type="number" min={1} step={0.01} placeholder="25.00" required />
+            <Label htmlFor="price">Ticket price (₦)</Label>
+            <Input id="price" name="price" type="number" min={1} step={0.01} placeholder="5000" required />
           </div>
         )}
 
