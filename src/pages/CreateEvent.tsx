@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { INDUSTRIES } from "@/lib/mockData";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, ImageOff } from "lucide-react";
 
 function formatTime12(time24: string): string {
   if (!time24) return "";
@@ -18,6 +18,16 @@ function formatTime12(time24: string): string {
   const period = h >= 12 ? "PM" : "AM";
   const hour12 = h % 12 || 12;
   return `${hour12}:${m.toString().padStart(2, "0")} ${period}`;
+}
+
+function isValidUrl(str: string): boolean {
+  if (!str) return true; // empty is fine (optional field)
+  try {
+    const url = new URL(str.trim());
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 export default function CreateEvent() {
@@ -29,6 +39,8 @@ export default function CreateEvent() {
   const [description, setDescription] = useState("");
   const [organizerName, setOrganizerName] = useState("");
   const [cover, setCover] = useState("");
+  const [coverError, setCoverError] = useState(false);
+  const [coverLoaded, setCoverLoaded] = useState(false);
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -43,6 +55,13 @@ export default function CreateEvent() {
     return <Navigate to="/login" replace />;
   }
 
+  const handleCoverChange = (val: string) => {
+    setCover(val);
+    // Reset preview state whenever the URL changes
+    setCoverError(false);
+    setCoverLoaded(false);
+  };
+
   const handleCreate = async () => {
     if (!title) { toast.error("Please enter an event name."); return; }
     if (!description) { toast.error("Please enter a description."); return; }
@@ -55,6 +74,12 @@ export default function CreateEvent() {
     if (!industry) { toast.error("Please select an industry."); return; }
     if (!capacity || Number(capacity) < 1) { toast.error("Please enter a valid capacity."); return; }
     if (!isFree && (!price || Number(price) < 0)) { toast.error("Please enter a valid price."); return; }
+
+    const trimmedCover = cover.trim();
+    if (trimmedCover && !isValidUrl(trimmedCover)) {
+      toast.error("Please enter a valid image URL (must start with http:// or https://).");
+      return;
+    }
 
     setSaving(true);
 
@@ -77,11 +102,10 @@ export default function CreateEvent() {
         capacity: Number(capacity),
         spots_remaining: Number(capacity),
         price: isFree ? 0 : Number(price),
-        image_url: cover || null,
+        image_url: trimmedCover || null,
         organizer_email: organizerEmail,
       };
 
-      console.log("Inserting:", eventData);
       const { data: insertData, error } = await supabase.from("events").insert(eventData).select();
       console.log("Result:", insertData, error);
 
@@ -96,6 +120,9 @@ export default function CreateEvent() {
       setSaving(false);
     }
   };
+
+  // Determine whether to show the image preview
+  const showPreview = cover.trim() && isValidUrl(cover.trim());
 
   return (
     <div className="container max-w-2xl py-8 space-y-8">
@@ -120,9 +147,51 @@ export default function CreateEvent() {
           <Input value={organizerName} onChange={e => setOrganizerName(e.target.value)} placeholder="e.g. Lagos Tech Network" />
         </div>
 
+        {/* Cover image URL with preview */}
         <div className="space-y-2">
-          <Label>Cover image URL</Label>
-          <Input value={cover} onChange={e => setCover(e.target.value)} placeholder="https://example.com/image.jpg" />
+          <Label>Cover image URL <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Input
+            value={cover}
+            onChange={e => handleCoverChange(e.target.value)}
+            placeholder="https://example.com/image.jpg"
+            className="truncate"
+          />
+
+          {/* Validation warning */}
+          {cover.trim() && !isValidUrl(cover.trim()) && (
+            <p className="text-sm text-destructive">
+              URL must start with http:// or https://
+            </p>
+          )}
+
+          {/* Image preview — constrained so it can never distort the layout */}
+          {showPreview && (
+            <div className="relative w-full h-48 rounded-md border overflow-hidden bg-muted flex items-center justify-center">
+              {!coverError ? (
+                <img
+                  key={cover} // re-mount on URL change to reset load state
+                  src={cover.trim()}
+                  alt="Cover preview"
+                  onLoad={() => { setCoverLoaded(true); setCoverError(false); }}
+                  onError={() => { setCoverError(true); setCoverLoaded(false); }}
+                  className={`w-full h-full object-cover transition-opacity duration-300 ${coverLoaded ? "opacity-100" : "opacity-0"}`}
+                />
+              ) : null}
+
+              {/* Loading shimmer */}
+              {!coverLoaded && !coverError && (
+                <div className="absolute inset-0 bg-muted animate-pulse" />
+              )}
+
+              {/* Broken image fallback */}
+              {coverError && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <ImageOff className="h-8 w-8" />
+                  <p className="text-sm">Could not load image</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
