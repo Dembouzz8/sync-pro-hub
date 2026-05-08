@@ -31,10 +31,12 @@ export default function Auth() {
         await login(email, password);
         toast.success("Welcome back!");
       }
+      console.log("login success");
+      setSubmitting(false);
       navigate(role === "organizer" ? "/dashboard" : "/events");
     } catch (err: any) {
+      console.log("login error", err);
       toast.error(err.message ?? "Something went wrong");
-    } finally {
       setSubmitting(false);
     }
   };
