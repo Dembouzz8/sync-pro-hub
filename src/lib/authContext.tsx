@@ -54,14 +54,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     // Kick-start the session restore (triggers onAuthStateChange with INITIAL_SESSION)
-    supabase.auth.getSession().then(({ error }) => {
-  if (error) {
-    supabase.auth.signOut();
-    setLoading(false);
-  }
-});
+    supabase.auth.getSession()
+      .then(({ error }) => {
+        if (error) {
+          supabase.auth.signOut();
+        }
+      })
+      .catch((err) => {
+        console.error("getSession failed:", err);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+    // Safety net: force loading to false after 5s to avoid hanging UI
+    const timeoutId = setTimeout(() => {
+      setLoading((prev) => {
+        if (prev) console.warn("Auth loading timed out after 5s, forcing false.");
+        return false;
+      });
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
