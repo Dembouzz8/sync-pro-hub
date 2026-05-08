@@ -63,6 +63,7 @@ export default function CreateEvent() {
   };
 
   const handleCreate = async () => {
+    console.log('handleCreate fired');
     if (!title) { toast.error("Please enter an event name."); return; }
     if (!description) { toast.error("Please enter a description."); return; }
     if (!organizerName) { toast.error("Please enter an organizer name."); return; }
