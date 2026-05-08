@@ -106,8 +106,9 @@ export default function CreateEvent() {
         organizer_email: organizerEmail,
       };
 
+      console.log("Inserting event:", eventData);
       const { data: insertData, error } = await supabase.from("events").insert(eventData).select();
-      console.log("Result:", insertData, error);
+      console.log("Insert result:", insertData, "error:", error);
 
       if (error) throw error;
 
